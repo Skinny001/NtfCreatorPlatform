@@ -7,7 +7,7 @@ export default function MintPage() {
         <div className="text-center space-y-4">
           <h1 className="text-3xl md:text-4xl font-bold">Mint Your NFT</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Upload your artwork, add metadata, and mint it as an NFT on the blockchain. You'll automatically receive
+            Upload your artwork, add metadata, and mint it as an NFT on the blockchain. You&apos;ll automatically receive
             creator tokens as rewards.
           </p>
         </div>

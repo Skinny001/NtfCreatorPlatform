@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,11 +20,7 @@ export function RewardSystem() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>("")
 
-  useEffect(() => {
-    fetchRewards()
-  }, [walletProvider, address])
-
-  const fetchRewards = async () => {
+  const fetchRewards = useCallback(async () => {
     setLoading(true)
     setError("")
 
@@ -50,13 +46,18 @@ export function RewardSystem() {
         const balance = await contract.getCreatorTokenBalance(address)
         setUserBalance(balance)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching rewards:", err)
-      setError(err.message || "Failed to fetch reward data")
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch reward data"
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
-  }
+  }, [walletProvider, isConnected, address])
+
+  useEffect(() => {
+    fetchRewards()
+  }, [fetchRewards])
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAppKitProvider } from "@reown/appkit/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ExternalLink, RefreshCw, ImageIcon } from "lucide-react"
 import { ethers } from "ethers"
-import { NFTContract, type MintedNFT } from "@/lib/contract"
+import { NFTContract, NFTMetadata, type MintedNFT } from "@/lib/contract"
 import { fetchMetadata, getIPFSUrl } from "@/lib/ipfs"
 
 export function NFTGallery() {
@@ -17,11 +17,7 @@ export function NFTGallery() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>("")
 
-  useEffect(() => {
-    fetchNFTs()
-  }, [walletProvider])
-
-  const fetchNFTs = async () => {
+  const fetchNFTs = useCallback(async () => {
     setLoading(true)
     setError("")
 
@@ -38,7 +34,7 @@ export function NFTGallery() {
         mintedNFTs.map(async (nft) => {
           try {
             const metadata = await fetchMetadata(nft.tokenURI)
-            return { ...nft, metadata }
+            return { ...nft, metadata: metadata as NFTMetadata }
           } catch (err) {
             console.error(`Failed to fetch metadata for token ${nft.tokenId}:`, err)
             return nft
@@ -47,13 +43,21 @@ export function NFTGallery() {
       )
 
       setNfts(nftsWithMetadata.reverse()) // Show newest first
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching NFTs:", err)
-      setError(err.message || "Failed to fetch NFTs")
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError("Failed to fetch NFTs")
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [walletProvider])
+
+  useEffect(() => {
+    fetchNFTs()
+  }, [fetchNFTs])
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -116,6 +120,7 @@ export function NFTGallery() {
             <Card key={nft.tokenId} className="overflow-hidden">
               <div className="aspect-square relative bg-gray-100">
                 {nft.metadata?.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getIPFSUrl(nft.metadata.image) || "/placeholder.svg"}
                     alt={nft.metadata.name || `NFT #${nft.tokenId}`}

@@ -1,6 +1,3 @@
-
-
-
 "use client"
 
 import type React from "react"
@@ -152,18 +149,26 @@ setCurrentStep(5);
       setTimeout(() => {
         resetForm()
       }, 5000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Minting error:", err)
 
       // More specific error messages
-      if (err.code === "ACTION_REJECTED") {
-        setError("Transaction was rejected by user")
-      } else if (err.code === "INSUFFICIENT_FUNDS") {
-        setError("Insufficient funds for transaction")
-      } else if (err.message?.includes("user rejected")) {
-        setError("Transaction was rejected by user")
+      if (err && typeof err === 'object' && 'code' in err) {
+        if (err.code === "ACTION_REJECTED") {
+          setError("Transaction was rejected by user")
+        } else if (err.code === "INSUFFICIENT_FUNDS") {
+          setError("Insufficient funds for transaction")
+        } else if ('message' in err && typeof err.message === 'string' && err.message.includes("user rejected")) {
+          setError("Transaction was rejected by user")
+        } else if ('message' in err && typeof err.message === 'string') {
+          setError(err.message)
+        } else {
+          setError("Failed to mint NFT")
+        }
+      } else if (err instanceof Error) {
+        setError(err.message)
       } else {
-        setError(err.message || "Failed to mint NFT")
+        setError("Failed to mint NFT")
       }
       setMinting(false)
     }
@@ -285,6 +290,7 @@ setCurrentStep(5);
               {imagePreview ? (
                 <div className="space-y-4">
                   <div className="relative overflow-hidden rounded-lg bg-slate-800/50 p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imagePreview || "/placeholder.svg"}
                       alt="Preview"
